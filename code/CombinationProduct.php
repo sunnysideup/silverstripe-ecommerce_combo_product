@@ -2,6 +2,17 @@
 /**
  * A combination product combines several products into one new product.
  *
+ * The way this works is that the combo product links to zero or more products (many many relationship)
+ *
+ * When you add the combo product, the individual products are added.  A modifier adds the "discount" for the combo.
+ * It also deletes all the products as soon as you delete one.
+ *
+ * There are two restrictions to keep in mind:
+ * (a) it only applies to products and not all buyables.
+ * (b) all products need to return true for canPuarchase. This means that if the product is available as part of a combo, it should also be available by itself.
+ *
+ * We use the sort order for the order attribute to group it...
+ *
  * @package: ecommerce
  * @sub-package: products
  *
@@ -42,15 +53,18 @@ class CombinationProduct extends Product {
 
 	public static $icon = 'ecommerce_combo_product/images/icons/CombinationProduct';
 
-	protected static $list_separator = ";"; //SUM or COUNT
-		static function set_list_separator($s){self::$list_separator = $s;}
-		static function get_list_separator(){return self::$list_separator;}
-
 	function CalculatedPrice() {return $this->getCalculatedPrice();}
 	function getCalculatedPrice() {
-		$price = $this->Price;
-		$this->extend('updateCalculatedPrice',$price);
-		return $price;
+		$price = parent::getCalculatedPrice();
+		$components = $this->Components();
+		$reduction = 0;
+		if($components && $components->count()){
+			foreach($components as $component) {
+				$reduction += $component->CalculatedPrice();
+			}
+		}
+		return $price - $reduction;
+		//work out difference
 	}
 
 	function getCMSFields() {
@@ -96,221 +110,21 @@ class CombinationProduct extends Product {
 
 }
 
-class Product_Controller extends Page_Controller {
-
-	static $allowed_actions = array();
-
-	function init() {
-		parent::init();
-		Requirements::themedCSS('Products');
-	}
+class CombinationProduct_Controller extends Product_Controller {
 
 
-	function AddProductForm(){
-		if($this->canPurchase()) {
-			$farray = array();
-			$requiredFields = array();
-			$fields = new FieldSet($farray);
-			$fields->push(new NumericField('Quantity','Quantity',1)); //TODO: perhaps use a dropdown instead (elimiates need to use keyboard)
-			$actions = new FieldSet(
-				new FormAction('addproductfromform', _t("ProductWithVariationDecorator.ADDLINK","Add this item to cart"))
-			);
-			$requiredfields[] = 'Quantity';
-			$validator = new RequiredFields($requiredfields);
-			$form = new Form($this,'AddProductForm',$fields,$actions,$validator);
-			return $form;
-		}
-		else {
-			return "Product not for sale";
-		}
-	}
-
-	function addproductfromform($data,$form){
-		if(!$this->IsInCart()) {
-			$quantity = round($data['Quantity'], $this->QuantityDecimals());
-			if(!$quantity) {
-				$quantity = 1;
-			}
-			$product = DataObject::get_by_id("Product", $this->ID);
-			if($product) {
-				ShoppingCart::singleton()->addBuyable($product,$quantity);
-			}
-			if($this->IsInCart()) {
-				$msg = _t("Product.SUCCESSFULLYADDED","Added to cart.");
-				$status = "good";
-			}
-			else {
-				$msg = _t("Product.NOTADDEDTOCART","Not added to cart.");
-				$status = "bad";
-			}
-			if(Director::is_ajax()){
-				return ShoppingCart::singleton()->setMessageAndReturn($msg, $status);
-			}
-			else {
-				$form->sessionMessage($msg,$status);
-				Director::redirectBack();
-			}
-		}
-		else {
-			return new EcomQuantityField($this);
-		}
-	}
 
 
 
 }
 
-class Product_Image extends Image {
+class CombinationProduct_OrderItem extends OrderItem {
 
-	public static $db = array();
 
-	public static $has_one = array();
-
-	public static $has_many = array();
-
-	public static $many_many = array();
-
-	public static $belongs_many_many = array();
-
-	//default image sizes
-	protected static $thumbnail_width = 140;
-	protected static $thumbnail_height = 100;
-
-	protected static $content_image_width = 200;
-
-	protected static $large_image_width = 600;
-
-	static function set_thumbnail_size($width = 140, $height = 100){
-		self::$thumbnail_width = $width;
-		self::$thumbnail_height = $height;
+	function onAfterDelete(){
+		parent::onAfterDelete();
+		//remove all the combination products
+		//we need to remove them because otherwise removing the
+		//combination product does not add anything special.
 	}
-
-	static function set_content_image_width($width = 200){
-		self::$content_image_width = $width;
-	}
-
-	static function set_large_image_width($width = 600){
-		self::$large_image_width = $width;
-	}
-
-	/**
-	 *@return GD
-	 **/
-	function generateThumbnail($gd) {
-		$gd->setQuality(80);
-		return $gd->paddedResize(self::$thumbnail_width,self::$thumbnail_height);
-	}
-
-	/**
-	 *@return GD
-	 **/
-	function generateContentImage($gd) {
-		$gd->setQuality(90);
-		return $gd->resizeByWidth(self::$content_image_width);
-	}
-
-	/**
-	 *@return GD
-	 **/
-	function generateLargeImage($gd) {
-		$gd->setQuality(90);
-		return $gd->resizeByWidth(self::$large_image_width);
-	}
-
-
-
-}
-class Product_OrderItem extends OrderItem {
-
-	function canCreate($member = null) {
-		return true;
-	}
-	/**
-	 * Overloaded Product accessor method.
-	 *
-	 * Overloaded from the default has_one accessor to
-	 * retrieve a product by it's version, this is extremely
-	 * useful because we can set in stone the version of
-	 * a product at the time when the user adds the item to
-	 * their cart, so if the CMS admin changes the price, it
-	 * remains the same for this order.
-	 *
-	 * @param boolean $current If set to TRUE, returns the latest published version of the Product,
-	 * 								If set to FALSE, returns the set version number of the Product
-	 * 						 		(instead of the latest published version)
-	 * @return Product object
-	 */
-	public function Product($current = false) {
-		return $this->Buyable($current);
-	}
-
-
-	/**
-	 *@return Boolean
-	 **/
-	function hasSameContent($orderItem) {
-		$parentIsTheSame = parent::hasSameContent($orderItem);
-		return $parentIsTheSame && $orderItem instanceOf Product_OrderItem;
-	}
-
-	/**
-	 *@return Float
-	 **/
-	function UnitPrice($recalculate = false) {return $this->getUnitPrice($recalculate);}
-	function getUnitPrice($recalculate = false) {
-		$unitprice = 0;
-		if($this->priceHasBeenFixed() && !$recalculate) {
-			return parent::getUnitPrice($recalculate);
-		}
-		elseif($product = $this->Product()){
-			$unitprice = $product->getCalculatedPrice();
-			$this->extend('updateUnitPrice',$unitprice);
-		}
-		return $unitprice;
-	}
-
-
-	/**
-	 *@return String
-	 **/
-	function TableTitle() {return $this->getTableTitle();}
-	function getTableTitle() {
-		$tabletitle = _t("Product.UNKNOWN", "Unknown Product");
-		if($product = $this->Product()) {
-			$tabletitle = $product->Title;
-			$this->extend('updateTableTitle',$tabletitle);
-		}
-		return $tabletitle;
-	}
-
-	/**
-	 *@return String
-	 **/
-	function TableSubTitle() {return $this->getTableSubTitle();}
-	function getTableSubTitle() {
-		$tablesubtitle = '';
-		if($product = $this->Product()) {
-			$tablesubtitle = $product->Quantifier;
-			$this->extend('updateTableSubTitle',$tablesubtitle);
-		}
-		return $tablesubtitle;
-	}
-
-	public function debug() {
-		$title = $this->TableTitle();
-		$productID = $this->BuyableID;
-		$productVersion = $this->Version;
-		$html = parent::debug() .<<<HTML
-			<h3>Product_OrderItem class details</h3>
-			<p>
-				<b>Title : </b>$title<br/>
-				<b>Product ID : </b>$productID<br/>
-				<b>Product Version : </b>$productVersion
-			</p>
-HTML;
-		$this->extend('updateDebug',$html);
-		return $html;
-	}
-
-
 }
