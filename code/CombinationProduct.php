@@ -33,7 +33,7 @@ class CombinationProduct extends Product {
 		'ID',
 		'Title',
 		'InternalItemID',
-		'Price'
+		'Price',
 		'ListOfProducts'
 	);
 
@@ -96,7 +96,7 @@ class CombinationProduct extends Product {
 	 */
 	function canPurchase($member = null) {
 		if($components = $this->Components()) {
-			if($components->count())
+			if($components->count()) {
 				foreach($components as $product) {
 					if(!$product->canPurchase($member)) {
 						return false;

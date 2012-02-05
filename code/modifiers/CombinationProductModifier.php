@@ -111,8 +111,9 @@ class CombinationProductModifier extends OrderModifier {
 			foreach($items as $item) {
 				$buyable = $item->Buyable();
 				if($buyable) {
-				if($product->ClassName == $buyable->ClassName && $product->ID == $buyable->ID) {
-					return $item->Quantity;
+					if($product->ClassName == $buyable->ClassName && $product->ID == $buyable->ID) {
+						return $item->Quantity;
+					}
 				}
 			}
 		}
