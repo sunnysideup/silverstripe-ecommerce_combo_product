@@ -9,7 +9,7 @@
  *
  * There are two restrictions to keep in mind:
  * (a) it only applies to products and not all buyables.
- * (b) all products need to return true for canPuarchase. This means that if the product is available as part of a combo, it should also be available by itself.
+ * (b) all products need to return true for canPurchase. This means that if the product is available as part of a combo, it should also be available by itself.
  *
  * We use the sort order for the order attribute to group it...
  *
@@ -118,13 +118,11 @@ class CombinationProduct_Controller extends Product_Controller {
 
 }
 
-class CombinationProduct_OrderItem extends OrderItem {
+class CombinationProduct_OrderItem extends Product_OrderItem {
+
+	//add a deletion system
 
 
-	function onAfterDelete(){
-		parent::onAfterDelete();
-		//remove all the combination products
-		//we need to remove them because otherwise removing the
-		//combination product does not add anything special.
-	}
+
 }
+
