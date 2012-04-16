@@ -53,20 +53,6 @@ class CombinationProduct extends Product {
 
 	public static $icon = 'ecommerce_combo_product/images/icons/CombinationProduct';
 
-	function CalculatedPrice() {return $this->getCalculatedPrice();}
-	function getCalculatedPrice() {
-		$price = parent::getCalculatedPrice();
-		$components = $this->Components();
-		$reduction = 0;
-		if($components && $components->count()){
-			foreach($components as $component) {
-				$reduction += $component->CalculatedPrice();
-			}
-		}
-		return $price - $reduction;
-		//work out difference
-	}
-
 	function getCMSFields() {
 		$fields = parent::getCMSFields();
 		$fields->addFieldToTab("Root.Content.Components", $this->getComponentsFormField());
@@ -78,8 +64,15 @@ class CombinationProduct extends Product {
 	 *@return TreeMultiselectField
 	 **/
 	protected function getComponentsFormField() {
-		$field = new TreeMultiselectField($name = "Components", $title = "Product Components", $sourceObject = "SiteTree", $keyField = "ID", $labelField = "MenuTitle");
-		//See issue: 139
+		$field = new TreeMultiselectField(
+			$name = "Components",
+			$title = "Product Components",
+			$sourceObject = "SiteTree",
+			$keyField = "ID",
+			$labelField = "MenuTitle"
+		);
+		$filter = create_function('$obj', 'return ( ( $obj InstanceOf Product) && ($obj->ID != '.$this->ID.'));');
+		$field->setFilterFunction($filter);
 		return $field;
 	}
 
@@ -102,10 +95,27 @@ class CombinationProduct extends Product {
 						return false;
 					}
 				}
-				return true;
+				return parent::canPurchase($member);
 			}
 		}
 		return false;
+	}
+
+	public function classNameForOrderItem() {
+		return "CombinationProduct_OrderItem";
+	}
+
+	function getCalculatedPrice() {
+		$price = parent::getCalculatedPrice();
+		$components = $this->Components();
+		$reduction = 0;
+		if($components && $components->count()){
+			foreach($components as $component) {
+				$reduction += $component->CalculatedPrice();
+			}
+		}
+		return $price - $reduction;
+		//work out difference
 	}
 
 }
@@ -122,7 +132,10 @@ class CombinationProduct_OrderItem extends Product_OrderItem {
 
 	//add a deletion system
 
-
-
+	function onBeforeDelete(){
+		$currentOrder = ShoppingCart::current_order();
+		$currentOrder->calculateOrderAttributes(true);
+		parent::onBeforeDelete();
+	}
 }
 

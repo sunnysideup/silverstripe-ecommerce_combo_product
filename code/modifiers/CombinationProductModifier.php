@@ -80,6 +80,7 @@ class CombinationProductModifier extends OrderModifier {
 	 *
 	 */
 	protected function addProductsPerCombo(){
+		$reload = false;
 		if($items = $this->loadItems()) {
 			foreach($items as $item) {
 				if($item instanceOf CombinationProduct_OrderItem) {
@@ -90,9 +91,17 @@ class CombinationProductModifier extends OrderModifier {
 						foreach($childProducts as $childProduct) {
 							$childQuantity = $this->countOfProductInOrder($childProduct);
 							$difference = $comboQuantity - $childQuantity;
-							if($difference > 0) {
-								$shoppingCart = ShoppingCart::singleton();
-								$shoppingCart->addBuyable($childProduct, $difference);
+							if($difference) {
+								if(!$reload) {
+									$shoppingCart = ShoppingCart::singleton();
+									$reload = true;
+								}
+								if($comboQuantity) {
+									$shoppingCart->setQuantity($childProduct, $comboQuantity);
+								}
+								else {
+									$shoppingCart->deleteBuyable($childProduct);
+								}
 							}
 						}
 					}
@@ -131,7 +140,7 @@ class CombinationProductModifier extends OrderModifier {
 	/**
 	* some modifiers can be hidden after an ajax update (e.g. if someone enters a discount coupon and it does not exist).
 	* There might be instances where ShowInTable (the starting point) is TRUE and HideInAjaxUpdate return false.
-	*@return Boolean
+	* @return Boolean
 	**/
 	public function HideInAjaxUpdate() {
 		return true;
