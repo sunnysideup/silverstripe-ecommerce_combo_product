@@ -185,6 +185,12 @@ class CombinationProduct_OrderItem extends Product_OrderItem {
 			return _t("CombinationProduct.INCLUDES", "Includes").": ".implode(", ", $titleArray).".";
 		}
 	}
+
+	function onBeforeWrite() {
+		Requirements::themedCSS("CombinationProductModifier");
+		parent::onBeforeWrite();
+		$this->Sort = $this->Buyable()->ID;
+	}
 }
 
 class IncludedProduct_OrderItem extends Product_OrderItem {
@@ -206,7 +212,13 @@ class IncludedProduct_OrderItem extends Product_OrderItem {
 	}
 
 	function TableSubTitle(){
+		Requirements::themedCSS("CombinationProductModifier");
 		return _t("CombinationProduct.PARTOF", "Part of").": ".$this->ParentOrderItem()->TableTitle().".";
+	}
+
+	function onBeforeWrite() {
+		parent::onBeforeWrite();
+		$this->Sort = $this->ParentOrderItem()->Buyable()->ID + 1;
 	}
 
 }
