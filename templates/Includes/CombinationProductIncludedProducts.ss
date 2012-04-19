@@ -1,9 +1,11 @@
-<% if Components %>
-<div id="ComponentSection">
+<% if IncludedProducts %>
+<div id="IncludedProductsSection">
 	<h2>Included are:</h2>
 	<ul>
-		<% control Components %>
-		<% include ProductGroupItem %>
+		<% control IncludedProducts %>
+		<li class="productItem $FirstLast item$Pos">
+			<h3><a href="$Link">$Title</a></h3>
+		</li>
 		<% end_control %>
 	</ul>
 </div>

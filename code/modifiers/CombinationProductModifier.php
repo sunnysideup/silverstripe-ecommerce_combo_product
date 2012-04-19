@@ -15,14 +15,15 @@ class CombinationProductModifier extends OrderModifier {
 
 // ######################################## *** other (non) static variables (e.g. protected static $special_name_for_something, protected $order)
 
-	protected static $order_items = false;
+	protected static $savings = 0;
+
 
 	/**
 	 * standard modifier method
 	 * @param Boolean $force - should the update run no matter what
 	 */
 	public function runUpdate($force = false) {
-		$this->addAndRemoveProducts();
+		$this->addProductsPerCombo();
 		parent::runUpdate($force);
 	}
 
@@ -45,7 +46,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Boolean
 	 */
 	public function ShowInTable() {
-		return false;
+		return $this->loadCombinationProducts();
 	}
 
 	/**
@@ -62,17 +63,19 @@ class CombinationProductModifier extends OrderModifier {
 	/**
 	 * loads the items in the static variable $order_items
 	 * and saves the items for future use.
-	 *
+	 * @return Null | DataObjectSet
 	 */
-	protected function loadItems(){
-		if(self::$order_items === false) {
-			self::$order_items = null;
-			$order = $this->Order();
-			if($order) {
-				self::$order_items = $this->Order()->Items();
-			}
-		}
-		return self::$order_items;
+	protected function loadIncludedProductItems(){
+		return DataObject::get("IncludedProduct_OrderItem", "OrderID = ".$this->Order()->ID);
+	}
+
+	/**
+	 * loads the items in the static variable $order_items
+	 * and saves the items for future use.
+	 * @return Null | DataObjectSet
+	 */
+	protected function loadCombinationProducts(){
+		return DataObject::get("CombinationProduct_OrderItem", "OrderID = ".$this->Order()->ID);
 	}
 
 	/**
@@ -81,32 +84,40 @@ class CombinationProductModifier extends OrderModifier {
 	 */
 	protected function addProductsPerCombo(){
 		$reload = false;
-		if($items = $this->loadItems()) {
-			foreach($items as $item) {
-				if($item instanceOf CombinationProduct_OrderItem) {
-					$comboProduct = $item->Buyable();
-					$comboQuantity = $item->Quantity;
-					$childProducts = $comboProduct->Components();
-					if($childProducts){
-						foreach($childProducts as $childProduct) {
-							$childQuantity = $this->countOfProductInOrder($childProduct);
-							$difference = $comboQuantity - $childQuantity;
-							if($difference) {
-								if(!$reload) {
-									$shoppingCart = ShoppingCart::singleton();
-									$reload = true;
+		$shoppingCart = ShoppingCart::singleton();
+		if($combinationProductOrderItems = $this->loadCombinationProducts()) {
+			foreach($combinationProductOrderItems as $combinationProductOrderItem) {
+				$combinationProduct = $combinationProductOrderItem->Buyable();
+				$comboProductQTY = $combinationProductOrderItem->Quantity;
+				$includedProducts = $combinationProduct->IncludedProducts();
+				if($includedProducts){
+					foreach($includedProducts as $includedProduct) {
+						$includedProductQTY = $this->countOfProductInOrder($includedProduct);
+						$difference = $comboProductQTY - $includedProductQTY;
+						if($difference) {
+							$reload = true;
+							if($comboProductQTY) {
+								//in case it has not been added
+								if(!$includedProduct->IsInCart()) {
+									$includedProduct->setAlternativeClassNameForOrderItem("IncludedProduct_OrderItem");
+									$item = $shoppingCart->addBuyable($includedProduct);
+									if($item) {
+										$item->ParentOrderItemID = $combinationProductOrderItem->ID;
+										$item->write();
+									}
 								}
-								if($comboQuantity) {
-									$shoppingCart->setQuantity($childProduct, $comboQuantity);
-								}
-								else {
-									$shoppingCart->deleteBuyable($childProduct);
-								}
+								$shoppingCart->setQuantity($includedProduct, $comboProductQTY);
+							}
+							else {
+								$shoppingCart->deleteBuyable($includedProduct);
 							}
 						}
 					}
 				}
 			}
+		}
+		if($reload) {
+			CartResponse::set_force_reload();
 		}
 	}
 
@@ -116,7 +127,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Integer
 	 */
 	protected function countOfProductInOrder($product) {
-		if($items = $this->loadItems()) {
+		if($items = $this->loadIncludedProductItems()) {
 			foreach($items as $item) {
 				$buyable = $item->Buyable();
 				if($buyable) {
@@ -130,6 +141,24 @@ class CombinationProductModifier extends OrderModifier {
 
 // ######################################## *** calculate database fields: protected function Live[field name]  ... USES CALCULATED VALUES
 
+	public function LiveName() {
+		return _t("CombinationProductModifier.SAVINGS", "Savings");
+	}
+
+	public function LiveTableValue() {
+		self::$savings = 0;
+		if($this->ShowInTable()) {
+			$combinationProductOrderItems = DataObject::get("CombinationProduct_OrderItem", "OrderID = ".$this->Order()->ID);
+			if($combinationProductOrderItems) {
+				foreach($combinationProductOrderItems as $combinationProductOrderItem) {
+					$buyable = $combinationProductOrderItem->Buyable();
+					self::$savings -= ($buyable->getPrice() - $buyable->NewPrice) * $combinationProductOrderItem->Quantity;
+				}
+			}
+		}
+		return self::$savings;
+	}
+
 // ######################################## *** Type Functions (IsChargeable, IsDeductable, IsNoChange, IsRemoved)
 
 
@@ -137,14 +166,7 @@ class CombinationProductModifier extends OrderModifier {
 // ######################################## *** standard database related functions (e.g. onBeforeWrite, onAfterWrite, etc...)
 
 // ######################################## *** AJAX related functions
-	/**
-	* some modifiers can be hidden after an ajax update (e.g. if someone enters a discount coupon and it does not exist).
-	* There might be instances where ShowInTable (the starting point) is TRUE and HideInAjaxUpdate return false.
-	* @return Boolean
-	**/
-	public function HideInAjaxUpdate() {
-		return true;
-	}
+
 // ######################################## *** debug functions
 
 }

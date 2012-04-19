@@ -21,12 +21,12 @@
 
 class CombinationProduct extends Product {
 
-	public static $many_many = array(
-		'Components' => 'Product'
+	public static $db = array(
+		'NewPrice' => 'Currency'
 	);
 
-	public static $defaults = array(
-		'AllowPurchase' => false
+	public static $many_many = array(
+		'IncludedProducts' => 'Product'
 	);
 
 	public static $searchable_fields = array(
@@ -38,7 +38,7 @@ class CombinationProduct extends Product {
 	);
 
 	public static $casting = array(
-		"ListOfProducts" => "Title"
+		"OriginalPrice" => "Currency"
 	);
 
 	public static $singular_name = "Combination Product";
@@ -55,7 +55,10 @@ class CombinationProduct extends Product {
 
 	function getCMSFields() {
 		$fields = parent::getCMSFields();
-		$fields->addFieldToTab("Root.Content.Components", $this->getComponentsFormField());
+		$fields->addFieldToTab("Root.Content.Components", $this->getIncludedProductsFormField());
+		$fields->replaceField("Price", new ReadOnlyField("Price", "Full Price"));
+		$fields->addFieldToTab("Root.Content.Details", new NumericField("NewPrice", "New Price"), "Price");
+		$fields->addFieldToTab("Root.Content.Details", new ReadOnlyField("Savings", "Savings", $this->getPrice() - $this->NewPrice), "Price");
 		return $fields;
 	}
 
@@ -63,15 +66,15 @@ class CombinationProduct extends Product {
 	/**
 	 *@return TreeMultiselectField
 	 **/
-	protected function getComponentsFormField() {
+	protected function getIncludedProductsFormField() {
 		$field = new TreeMultiselectField(
-			$name = "Components",
-			$title = "Product Components",
+			$name = "IncludedProducts",
+			$title = "Included Products",
 			$sourceObject = "SiteTree",
 			$keyField = "ID",
 			$labelField = "MenuTitle"
 		);
-		$filter = create_function('$obj', 'return ( ( $obj InstanceOf Product) && ($obj->ID != '.$this->ID.'));');
+		$filter = create_function('$obj', 'return ( ( $obj InstanceOf Product || $obj InstanceOf ProductGroup) && ($obj->ID != '.$this->ID.'));');
 		$field->setFilterFunction($filter);
 		return $field;
 	}
@@ -88,10 +91,10 @@ class CombinationProduct extends Product {
 	 * @return boolean
 	 */
 	function canPurchase($member = null) {
-		if($components = $this->Components()) {
-			if($components->count()) {
-				foreach($components as $product) {
-					if(!$product->canPurchase($member)) {
+		if($includedProducts = $this->IncludedProducts()) {
+			if($includedProducts->count()) {
+				foreach($includedProducts as $includedProduct) {
+					if(!$includedProduct->canPurchase($member)) {
 						return false;
 					}
 				}
@@ -105,17 +108,42 @@ class CombinationProduct extends Product {
 		return "CombinationProduct_OrderItem";
 	}
 
-	function getCalculatedPrice() {
-		$price = parent::getCalculatedPrice();
-		$components = $this->Components();
-		$reduction = 0;
-		if($components && $components->count()){
-			foreach($components as $component) {
-				$reduction += $component->CalculatedPrice();
+
+	/**
+	 *
+	 *
+	 *
+	 */
+	function getPrice(){
+		if($includedProducts = $this->IncludedProducts()) {
+			$originalPrice = 0;
+			if($includedProducts && $includedProducts->count()){
+				foreach($includedProducts as $includedProduct) {
+					$originalPrice += $includedProduct->CalculatedPrice();
+				}
 			}
 		}
-		return $price - $reduction;
-		//work out difference
+		return $originalPrice;
+	}
+
+	function getCalculatedPrice(){
+		return $this->getField("NewPrice");
+	}
+
+	/**
+	 * remove any non-products from the list.
+	 *
+	 */
+	function onBeforeWrite(){
+		parent::onBeforeWrite();
+		$includedProducts = $this->IncludedProducts();
+		if($includedProducts) {
+			foreach($includedProducts as $includedProduct) {
+				if(!$includedProduct instanceOf Product) {
+					$includedProducts->remove($includedProduct);
+				}
+			}
+		}
 	}
 
 }
@@ -128,14 +156,58 @@ class CombinationProduct_Controller extends Product_Controller {
 
 }
 
+
 class CombinationProduct_OrderItem extends Product_OrderItem {
 
 	//add a deletion system
 
 	function onBeforeDelete(){
-		$currentOrder = ShoppingCart::current_order();
-		$currentOrder->calculateOrderAttributes(true);
 		parent::onBeforeDelete();
+		$includedProductsOrderItems = DataObject::get("IncludedProduct_OrderItem", "\"ParentOrderItemID\" = ".$this->ID." AND OrderID = ".$this->Order()->ID);
+		if($includedProductsOrderItems){
+			foreach($includedProductsOrderItems as $includedProductsOrderItem) {
+				$includedProductsOrderItem->delete();
+				$includedProductsOrderItem->destroy();
+			}
+		}
 	}
+
+	function TableSubTitle(){
+		$buyable = $this->Buyable();
+		$includedProducts = $buyable->IncludedProducts();
+		$titleArray = array();
+		if($includedProducts){
+			foreach($includedProducts as $includedProduct) {
+				$titleArray[] = $includedProduct->MenuTitle;
+			}
+		}
+		if(count($titleArray)) {
+			return _t("CombinationProduct.INCLUDES", "Includes").": ".implode(", ", $titleArray).".";
+		}
+	}
+}
+
+class IncludedProduct_OrderItem extends Product_OrderItem {
+
+	static $has_one = array(
+		"ParentOrderItem" => "CombinationProduct_OrderItem"
+	);
+
+	function LiveCalculatedTotal(){
+		return 0;
+	}
+
+	function Total(){
+		return 0;
+	}
+
+	function getTotal(){
+		return 0;
+	}
+
+	function TableSubTitle(){
+		return _t("CombinationProduct.PARTOF", "Part of").": ".$this->ParentOrderItem()->TableTitle().".";
+	}
+
 }
 
