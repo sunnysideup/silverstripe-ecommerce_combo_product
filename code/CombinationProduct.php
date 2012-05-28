@@ -218,7 +218,12 @@ class IncludedProduct_OrderItem extends Product_OrderItem {
 
 	function onBeforeWrite() {
 		parent::onBeforeWrite();
-		$this->Sort = $this->ParentOrderItem()->Buyable()->ID + 1;
+		if($parentOrderItem = $this->ParentOrderItem()) {
+			if($buyable = $parentOrderItem->Buyable()) {
+				$this->Sort = $buyable->ID + 1;
+			}
+		}
+
 	}
 
 }
