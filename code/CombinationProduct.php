@@ -144,6 +144,7 @@ class CombinationProduct extends Product {
 				}
 			}
 		}
+		$this->Price = $this->NewPrice;
 	}
 
 }
