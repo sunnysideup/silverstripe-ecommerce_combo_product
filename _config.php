@@ -11,5 +11,13 @@
 
 //===================---------------- START ecommerce_combo_product MODULE ----------------===================
 //MUST SET
-//Order::add_modifier("CombinationProductModifier");
+/**
+ * ADD TO ECOMMERCE.YAML:
+Order:
+	modifiers: [
+		...
+		CombinationProductModifier
+	]
+*/
+
 //===================---------------- END ecommerce_combo_product MODULE ----------------===================
