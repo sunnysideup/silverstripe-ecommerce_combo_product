@@ -34,7 +34,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * standard OrderModifier Method
 	 * Should we show a form in the checkout page for this modifier?
 	 */
-	public function showForm() {
+	public function ShowForm() {
 		return false;
 	}
 
