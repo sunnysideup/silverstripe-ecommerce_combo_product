@@ -152,6 +152,10 @@ class CombinationProduct extends Product {
 class CombinationProduct_Controller extends Product_Controller {
 
 
+	function init(){
+		parent::init();
+		Requirements::themedCSS("CombinationProduct");
+	}
 
 
 
@@ -159,6 +163,7 @@ class CombinationProduct_Controller extends Product_Controller {
 
 
 class CombinationProduct_OrderItem extends Product_OrderItem {
+
 
 	//add a deletion system
 
@@ -226,6 +231,27 @@ class IncludedProduct_OrderItem extends Product_OrderItem {
 		}
 
 	}
+
+	function RemoveLink() {
+		return "";
+	}
+
+
+	function RemoveAllLink(){
+		return "";
+	}
+
+	function QuantityField(){
+		return new ReadonlyField("Quantity", "", $this->Quantity);
+	}
+
+
+	function onBeforeDelete(){
+		parent::onBeforeDelete();
+		CartResponse::set_force_reload();
+	}
+
+
 
 }
 

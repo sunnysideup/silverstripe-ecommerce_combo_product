@@ -162,7 +162,6 @@ class CombinationProductModifier extends OrderModifier {
 // ######################################## *** Type Functions (IsChargeable, IsDeductable, IsNoChange, IsRemoved)
 
 
-
 // ######################################## *** standard database related functions (e.g. onBeforeWrite, onAfterWrite, etc...)
 
 // ######################################## *** AJAX related functions
