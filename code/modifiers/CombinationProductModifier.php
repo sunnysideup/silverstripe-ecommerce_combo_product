@@ -23,7 +23,9 @@ class CombinationProductModifier extends OrderModifier {
 	 * @param Boolean $force - should the update run no matter what
 	 */
 	public function runUpdate($force = false) {
+		if (isset($_GET['debug_profile'])) Profiler::mark('CombinationProductModifier::runUpdate');
 		$this->addProductsPerCombo();
+		if (isset($_GET['debug_profile'])) Profiler::unmark('CombinationProductModifier::runUpdate');
 		parent::runUpdate($force);
 	}
 
