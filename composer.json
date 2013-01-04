@@ -1,0 +1,21 @@
+{
+	"name": "silverstripe/ecommerce_combo_product",
+	"type": "silverstripe-module",
+	"description": "Use this module within Silverstripe E-commerce. It adds the ability to group products together into one new product.",
+	"homepage": "http://www.silverstripe-ecommerce.com",
+	"keywords": ["ecommerce", "e-commerce", "shop", "combo product", "silverstripe"],
+	"license": "Sunny Side Up (BSD-3-Clause and CUSTOM)",
+	"authors":[
+		{
+			"name": "Nicolaas Francken",
+			"homepage": "https://github.com/sunnysideup",
+			"email" : "modules@sunnysideup.co.nz",
+			"role" : "lead developer"
+		}
+	],
+	"require":{
+		"php": ">=5.3.2",
+		"silverstripe/framework": ">=2.4.0",
+		"silverstripe/ecommerce": ">=2.4.0"
+	}
+}
