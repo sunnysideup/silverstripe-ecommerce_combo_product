@@ -1,5 +1,5 @@
 {
-	"name": "silverstripe/ecommerce_combo_product",
+	"name": "sunnysideup/ecommerce_combo_product",
 	"type": "silverstripe-module",
 	"description": "Use this module within Silverstripe E-commerce. It adds the ability to group products together into one new product.",
 	"homepage": "http://www.silverstripe-ecommerce.com",
