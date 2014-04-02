@@ -21,15 +21,15 @@
 
 class CombinationProduct extends Product {
 
-	public static $db = array(
+	private static $db = array(
 		'NewPrice' => 'Currency'
 	);
 
-	public static $many_many = array(
+	private static $many_many = array(
 		'IncludedProducts' => 'Product'
 	);
 
-	public static $searchable_fields = array(
+	private static $searchable_fields = array(
 		'ID',
 		'Title',
 		'InternalItemID',
@@ -37,28 +37,28 @@ class CombinationProduct extends Product {
 		'ListOfProducts'
 	);
 
-	public static $casting = array(
+	private static $casting = array(
 		"OriginalPrice" => "Currency"
 	);
 
-	public static $singular_name = "Combination Product";
+	private static $singular_name = "Combination Product";
 		function i18n_singular_name() { return _t("CombinationProduct.COMBINATIONPRODUCT", "Combination Product");}
 
-	public static $plural_name = "Combination Products";
+	private static $plural_name = "Combination Products";
 		function i18n_plural_name() { return _t("CombinationProduct.COMBINATIONPRODUCTS", "Combination Products");}
 
-	public static $default_parent = 'ProductGroup';
+	private static $default_parent = 'ProductGroup';
 
-	public static $default_sort = '"Title" ASC';
+	private static $default_sort = '"Title" ASC';
 
-	public static $icon = 'ecommerce_combo_product/images/icons/CombinationProduct';
+	private static $icon = 'ecommerce_combo_product/images/icons/CombinationProduct';
 
 	function getCMSFields() {
 		$fields = parent::getCMSFields();
-		$fields->addFieldToTab("Root.Content.Components", $this->getIncludedProductsFormField());
+		$fields->addFieldToTab("Root.Components", $this->getIncludedProductsFormField());
 		$fields->replaceField("Price", new ReadOnlyField("Price", "Full Price"));
-		$fields->addFieldToTab("Root.Content.Details", new NumericField("NewPrice", "New Price"), "Price");
-		$fields->addFieldToTab("Root.Content.Details", new ReadOnlyField("Savings", "Savings", $this->getPrice() - $this->NewPrice), "Price");
+		$fields->addFieldToTab("Root.Details", new NumericField("NewPrice", "New Price"), "Price");
+		$fields->addFieldToTab("Root.Details", new ReadOnlyField("Savings", "Savings", $this->getPrice() - $this->NewPrice), "Price");
 		return $fields;
 	}
 
@@ -169,8 +169,9 @@ class CombinationProduct_OrderItem extends Product_OrderItem {
 
 	function onBeforeDelete(){
 		parent::onBeforeDelete();
-		$includedProductsOrderItems = DataObject::get("IncludedProduct_OrderItem", "\"ParentOrderItemID\" = ".$this->ID." AND OrderID = ".$this->Order()->ID);
-		if($includedProductsOrderItems){
+		$includedProductsOrderItems = IncludedProduct_OrderItem::get()
+			->filter(array("ParentOrderItemID" => $this->ID, "OrderID" => $this->Order()->ID));
+		if($includedProductsOrderItems->count()){
 			foreach($includedProductsOrderItems as $includedProductsOrderItem) {
 				$includedProductsOrderItem->delete();
 				$includedProductsOrderItem->destroy();
@@ -201,7 +202,7 @@ class CombinationProduct_OrderItem extends Product_OrderItem {
 
 class IncludedProduct_OrderItem extends Product_OrderItem {
 
-	static $has_one = array(
+	private static $has_one = array(
 		"ParentOrderItem" => "CombinationProduct_OrderItem"
 	);
 

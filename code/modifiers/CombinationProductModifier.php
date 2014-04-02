@@ -13,9 +13,9 @@
  **/
 class CombinationProductModifier extends OrderModifier {
 
-// ######################################## *** other (non) static variables (e.g. protected static $special_name_for_something, protected $order)
+// ######################################## *** other (non) static variables (e.g. private static $special_name_for_something, protected $order)
 
-	protected static $savings = 0;
+	private static $savings = 0;
 
 
 	/**
@@ -23,9 +23,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * @param Boolean $force - should the update run no matter what
 	 */
 	public function runUpdate($force = false) {
-		if (isset($_GET['debug_profile'])) Profiler::mark('CombinationProductModifier::runUpdate');
 		$this->addProductsPerCombo();
-		if (isset($_GET['debug_profile'])) Profiler::unmark('CombinationProductModifier::runUpdate');
 		parent::runUpdate($force);
 	}
 
@@ -48,7 +46,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Boolean
 	 */
 	public function ShowInTable() {
-		return $this->loadCombinationProducts();
+		return $this->loadCombinationProducts()->count() ? true: false;
 	}
 
 	/**
@@ -68,7 +66,8 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Null | DataObjectSet
 	 */
 	protected function loadIncludedProductItems(){
-		return DataObject::get("IncludedProduct_OrderItem", "OrderID = ".$this->Order()->ID);
+		return IncludedProduct_OrderItem::get()
+			->filter(array("OrderID" => $this->Order()->ID));
 	}
 
 	/**
@@ -77,7 +76,8 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Null | DataObjectSet
 	 */
 	protected function loadCombinationProducts(){
-		return DataObject::get("CombinationProduct_OrderItem", "OrderID = ".$this->Order()->ID);
+		return CombinationProduct_OrderItem::get()
+			->filter(array("OrderID" => $this->Order()->ID));
 	}
 
 	/**
@@ -87,7 +87,8 @@ class CombinationProductModifier extends OrderModifier {
 	protected function addProductsPerCombo(){
 		$reload = false;
 		$shoppingCart = ShoppingCart::singleton();
-		if($combinationProductOrderItems = $this->loadCombinationProducts()) {
+		$combinationProductOrderItems = $this->loadCombinationProducts();
+		if($combinationProductOrderItems->count()) {
 			foreach($combinationProductOrderItems as $combinationProductOrderItem) {
 				$combinationProduct = $combinationProductOrderItem->Buyable();
 				$comboProductQTY = $combinationProductOrderItem->Quantity;
@@ -150,8 +151,9 @@ class CombinationProductModifier extends OrderModifier {
 	public function LiveTableValue() {
 		self::$savings = 0;
 		if($this->ShowInTable()) {
-			$combinationProductOrderItems = DataObject::get("CombinationProduct_OrderItem", "OrderID = ".$this->Order()->ID);
-			if($combinationProductOrderItems) {
+			$combinationProductOrderItems =  CombinationProduct_OrderItem::get()
+				->filter(array("OrderID" => $this->Order()->ID));
+			if($combinationProductOrderItems->count()) {
 				foreach($combinationProductOrderItems as $combinationProductOrderItem) {
 					$buyable = $combinationProductOrderItem->Buyable();
 					self::$savings -= ($buyable->getPrice() - $buyable->NewPrice) * $combinationProductOrderItem->Quantity;
