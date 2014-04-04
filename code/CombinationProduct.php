@@ -90,7 +90,7 @@ class CombinationProduct extends Product {
 	 *
 	 * @return boolean
 	 */
-	function canPurchase($member = null) {
+	function canPurchase(Member $member = null, $checkPrice = true) {
 		if($includedProducts = $this->IncludedProducts()) {
 			if($includedProducts->count()) {
 				foreach($includedProducts as $includedProduct) {
@@ -210,11 +210,11 @@ class IncludedProduct_OrderItem extends Product_OrderItem {
 		return 0;
 	}
 
-	function Total(){
-		return 0;
+	function Total($recalculate = false){
+		return $this->getTotal($recalculate);
 	}
 
-	function getTotal(){
+	function getTotal($recalculate = false){
 		return 0;
 	}
 
