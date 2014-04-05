@@ -154,7 +154,7 @@ class CombinationProduct_Controller extends Product_Controller {
 
 	function init(){
 		parent::init();
-		Requirements::themedCSS("CombinationProduct");
+		Requirements::themedCSS("CombinationProduct", "ecommerce_combo_product");
 	}
 
 
@@ -194,7 +194,6 @@ class CombinationProduct_OrderItem extends Product_OrderItem {
 	}
 
 	function onBeforeWrite() {
-		Requirements::themedCSS("CombinationProductModifier");
 		parent::onBeforeWrite();
 		$this->Sort = $this->Buyable()->ID;
 	}
@@ -219,7 +218,7 @@ class IncludedProduct_OrderItem extends Product_OrderItem {
 	}
 
 	function TableSubTitle(){
-		Requirements::themedCSS("CombinationProductModifier");
+		Requirements::themedCSS("CombinationProductModifier", "ecommerce_combo_product");
 		return _t("CombinationProduct.PARTOF", "Part of").": ".$this->ParentOrderItem()->TableTitle().".";
 	}
 

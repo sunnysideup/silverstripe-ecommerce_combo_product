@@ -2,11 +2,11 @@
 <div id="IncludedProductsSection">
 	<h2>Included are:</h2>
 	<ul>
-		<% with/loop IncludedProducts %>
+		<% loop IncludedProducts %>
 		<li class="productItem $FirstLast item$Pos">
 			<h3><a href="$Link">$Title</a></h3>
 		</li>
-		<% end_with/loop %>
+		<% end_loop %>
 	</ul>
 </div>
 <% end_if %>
