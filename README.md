@@ -1,7 +1,6 @@
-###############################################
+
 ecommerce combination product
-Pre 0.1 proof of concept
-###############################################
+================================================================================
 
 This module allows you to combine several products
 into one new product.
