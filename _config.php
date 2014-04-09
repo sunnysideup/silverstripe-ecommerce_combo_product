@@ -2,22 +2,19 @@
 
 
 /**
- * developed by www.sunnysideup.co.nz
  * author: Nicolaas - modules [at] sunnysideup.co.nz
-**/
 
+	 do not forget to add the modifier to the array of modifers, in case you want to use it:
 
-//copy the lines between the START AND END line to your /mysite/_config.php file and choose the right settings
+	 in mysite/_config.php:
+	 Config::inst()->update("Order", "modifiers", "CombinationProductModifier");
 
-//===================---------------- START ecommerce_combo_product MODULE ----------------===================
-//MUST SET
-/**
- * ADD TO ECOMMERCE.YAML:
-Order:
-	modifiers: [
-		...
-		CombinationProductModifier
-	]
+	 or BETTER, in mysite/_config/config.yml (or similar):
+
+	Order:
+		modifiers: [
+			...
+			CombinationProductModifier
+		]
+
 */
-
-//===================---------------- END ecommerce_combo_product MODULE ----------------===================
