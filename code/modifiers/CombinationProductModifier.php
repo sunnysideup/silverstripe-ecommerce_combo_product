@@ -66,8 +66,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Null | DataObjectSet
 	 */
 	protected function loadIncludedProductItems(){
-		return IncludedProduct_OrderItem::get()
-			->filter(array("OrderID" => $this->Order()->ID));
+		return IncludedProduct_OrderItem::get()->filter(array("OrderID" => $this->Order()->ID));
 	}
 
 	/**
@@ -76,8 +75,7 @@ class CombinationProductModifier extends OrderModifier {
 	 * @return Null | DataObjectSet
 	 */
 	protected function loadCombinationProducts(){
-		return CombinationProduct_OrderItem::get()
-			->filter(array("OrderID" => $this->Order()->ID));
+		return CombinationProduct_OrderItem::get()->filter(array("OrderID" => $this->Order()->ID));
 	}
 
 	/**
@@ -151,8 +149,7 @@ class CombinationProductModifier extends OrderModifier {
 	public function LiveTableValue() {
 		self::$savings = 0;
 		if($this->ShowInTable()) {
-			$combinationProductOrderItems =  CombinationProduct_OrderItem::get()
-				->filter(array("OrderID" => $this->Order()->ID));
+			$combinationProductOrderItems =  CombinationProduct_OrderItem::get()->filter(array("OrderID" => $this->Order()->ID));
 			if($combinationProductOrderItems->count()) {
 				foreach($combinationProductOrderItems as $combinationProductOrderItem) {
 					$buyable = $combinationProductOrderItem->Buyable();
