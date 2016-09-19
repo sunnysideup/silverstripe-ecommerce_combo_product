@@ -3,12 +3,14 @@
     "type": "silverstripe-module",
     "description": "Use this module within Silverstripe E-commerce. It adds the ability to group products together into one new product.",
     "keywords": [
+        "Silverstripe-CMS",
+        "CMS",
+        "Silverstripe",
         "ecommerce",
         "e-commerce",
         "shop",
         "cart",
         "combo product",
-        "silverstripe",
         "combination",
         "combine",
         "basket",
@@ -23,7 +25,9 @@
         }
     ],
     "require": {
-        "sunnysideup/ecommerce": "dev-master"
+        "sunnysideup/ecommerce": "*",
+        "silverstripe/framework": "~3.1",
+        "silverstripe/cms": "~3.1"
     },
     "extra": {
         "installer-name": "ecommerce_combo_product"
