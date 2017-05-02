@@ -15,7 +15,7 @@
 
  * [Developer Docs](docs/en/INDEX.md)
  * [User Guide](docs/en/userguide.md)
- * [API Docs](http://docs.ssmods.com/sunnysideup/ecommerce_combo_product)
+ * [API Docs](http://docs.ssmods.com/sunnysideup/ecommerce_combo_product/classes.xhtml)
 
 ## Requirements
 
