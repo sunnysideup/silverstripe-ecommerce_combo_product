@@ -26,8 +26,8 @@
     ],
     "require": {
         "sunnysideup/ecommerce": "*",
-        "silverstripe/framework": "~3.1",
-        "silverstripe/cms": "~3.1"
+        "silverstripe/framework": "~3.6",
+        "silverstripe/cms": "~3.6"
     },
     "extra": {
         "installer-name": "ecommerce_combo_product"
